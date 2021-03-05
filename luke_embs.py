@@ -1,13 +1,7 @@
 ### Luke's Embedding Demo
 
 import csv
-import numpy as np
-
-import torch
-from transformers import BertTokenizer, BertModel
-
 import spacy
-
 from sentence_transformers import SentenceTransformer
 
 def read_luke_data(datafile):
@@ -25,6 +19,8 @@ def read_luke_data(datafile):
     return data
 
 if __name__ == "__main__":
+    # pip install spacy
+    # python -m spacy download en_core_web_sm
     # pip install spacy-transformers
     # python -m spacy download en_core_web_trf
 
