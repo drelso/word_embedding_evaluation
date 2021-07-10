@@ -100,3 +100,26 @@ def get_word2vec_vectors(gensim_path='data/word_embeddings/word2vec-google-news-
             word_vectors.append(vec)
     
     return torch.tensor(word_vectors)
+
+
+def print_parameters(parameters):
+    '''
+    Pretty print all model parameters
+
+    Parameters
+    ----------
+    parameters : {str : X }
+        parameter dictionary, where the keys are
+        the parameter names with their corresponding
+        values
+    '''
+    
+    # PRINT PARAMETERS
+    print('\n=================== MODEL PARAMETERS: =================== \n')
+    for name, value in parameters.items():
+        # num_tabs = int((32 - len(name))/8) + 1
+        # tabs = '\t' * num_tabs
+        num_spaces = 30 - len(name)
+        spaces = ' ' * num_spaces
+        print(f'{name}: {spaces} {value}')
+    print('\n=================== / MODEL PARAMETERS: =================== \n')

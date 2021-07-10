@@ -1,3 +1,10 @@
+# Data
+data/
+
+# Nested repositories
+data/linguistic_feats/SEMCATdataset2018/
+output/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

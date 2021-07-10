@@ -14,6 +14,7 @@
 ###
 
 import wmd
+from wmd import WMD
 import spacy
 from collections import Counter
 import numpy as np
@@ -34,6 +35,8 @@ import subprocess
 import shlex
 import psutil
 
+from config import parameters
+
 
 # Loading model for our own word embeddings
 # To load new embeddings make sure they are
@@ -47,25 +50,26 @@ import psutil
 # problems). Load this file into temp to
 # access it from spaCy:
 
-# > python3 -m spacy init-model en /tmp/w2v_nosyns_voc20 --vectors-loc model/w2v_init-no_syns-10e-voc20-emb300/w2v_init-no_syns-10e-voc20-emb300.tsv
+# > python3 -m spacy init vectors en ~/data/word_embeddings/word2vec/GoogleNews-vectors-negative300.txt /tmp/Word2Vec_GoogleNews --name Word2Vec_GoogleNews
 
 # Then, load the saved model with spaCy, within a
 # WMD pipeline
-# embs_model = '/tmp/w2v_nosyns_voc20'
+# embs_model = '/tmp/Word2Vec_GoogleNews'
 
 
-def init_spacy(model_name, is_base=False):
+def init_spacy(embs_path, model_name):
     
-    embs_dir = '/tmp/' + model_name
+    embs_temp = '/tmp/' + model_name
     
-    if not os.path.exists(embs_dir):
-        spacy_init_model(embs_dir, model_name, is_base=is_base)
+    if not os.path.exists(embs_temp):
+        # spacy_init_model(embs_dir, model_name, is_base=is_base)
+        spacy_init_model(embs_path, embs_temp)
     
-    nlp = spacy.load(embs_dir, create_pipeline=wmd.WMD.create_spacy_pipeline)
+    nlp = spacy.load(embs_temp)#, create_pipeline=wmd.WMD.create_spacy_pipeline)
     # nlp = spacy.load('en_core_web_md', create_pipeline=wmd.WMD.create_spacy_pipeline)
-    nlp.add_pipe(wmd.WMD.SpacySimilarityHook(nlp), last=True)
+    # nlp.add_pipe(wmd.WMD.SpacySimilarityHook(nlp), last=True)
     
-    print('Loaded model into spaCy: \t', embs_dir)
+    print('Loaded model into spaCy: \t', embs_temp)
     
     spacy_embs = SpacyEmbeddings(nlp)
     print('Initialised spaCy embeddings')
@@ -113,7 +117,7 @@ def print_process():
     # print('Thread information: ', p.threads())
 
     
-def get_nearest_neighbours(batch_start, batch_end,calc, num_neighbors, results):
+def get_nearest_neighbours(batch_start, batch_end, calc, num_neighbors, results):
     j = 0    
     print_after = math.ceil((batch_end - batch_start) / 2)
     
@@ -156,7 +160,19 @@ def get_nearest_neighbours(batch_start, batch_end,calc, num_neighbors, results):
     print('******* End of batch %d - %d *******' % (batch_start, batch_end))
 
 
-def spacy_init_model(embs_dir, model_name, is_base=False):
+def spacy_init_model(embs_path, embs_temp):
+    model_path = '~/data/word_embeddings/word2vec/GoogleNews-vectors-negative300.txt'
+    bash_cmd = 'python3 -m spacy init vectors en %s %s' % (embs_path, embs_temp)
+    
+    print('Running command: \t', bash_cmd)
+    
+    sprocess = subprocess.Popen(shlex.split(bash_cmd), stdout=subprocess.PIPE)
+    output, error = sprocess.communicate()
+    # print('CONSOLE OUTPUT: ', bash_cmd.split(), shlex.split(bash_cmd))
+    print(output.decode('unicode_escape'))
+
+
+def OLD_spacy_init_model(embs_dir, model_name, is_base=False):
     if not is_base:
         model_path = os.path.abspath('model/%s/%s.tsv' % (model_name, model_name))
     else:
@@ -171,9 +187,47 @@ def spacy_init_model(embs_dir, model_name, is_base=False):
     print(output.decode('unicode_escape'))
     
 
+def convert_to_spacy_embeds(source_embeds, embeds_save_file):
+    if not os.path.exists(embeds_save_file):
+        print(f'No embeddings file found at {embeds_save_file}, creating an embeddings file from {source_embeds}.')
+        
+        with open(embeds_save_file, 'w+') as spacy_emb_file:
+            embs = np.load(source_embeds, allow_pickle=True)
+            
+            vocab_size = len(embs.item())
+            embed_dim = len(list(embs.item().values())[0])
+
+            print(f"Vocabulary size: {vocab_size}")
+            print(f"Embedding dimensions: {embed_dim}")
+            
+            print(f"Writing embeddings from {source_embeds} to file at {embeds_save_file}")
+
+            # From https://spacy.io/api/cli#init-vectors
+            # Location of vectors. Should be a file where the first
+            # row contains the dimensions of the vectors, followed
+            # by a space-separated Word2Vec table
+            spacy_emb_file.write(str(vocab_size) + ' ' + str(embed_dim) + '\n')
+
+            for word, vec in embs.item().items():
+                row = word + ' ' + ' '.join([str(i) for i in vec])
+                spacy_emb_file.write(row + '\n')
+    else:
+        print(f'Embeddings file found at {embeds_save_file}.')
+
+
 if __name__ == '__main__':
     print('Start time: ', time.asctime())
     t = time.time()
+
+    convert_to_spacy_embeds(parameters['word2vec_embeds'], parameters['word2vec_embeds_spacy'])
+    convert_to_spacy_embeds(parameters['hellingerPCA_embeds'], parameters['hellingerPCA_embeds_spacy'])
+    convert_to_spacy_embeds(parameters['glove_embeds'], parameters['glove_embeds_spacy'])
+
+    # model_name = 'Word2Vec_GoogleNews_BNC_s10_v5'
+    # embs_path = parameters['word2vec_embeds_spacy']
+    
+    model_name = 'HellingerPCA_BNC_s10_v5'
+    embs_path = parameters['hellingerPCA_embeds_spacy']
     
     # To run with profiler sorted by tottime
     # (tottime is the total runtime for a
@@ -182,13 +236,14 @@ if __name__ == '__main__':
     
     # model_name = 'word2vec-google-news-300_voc3'
     # model_name = 'rand_init-syns-10e-voc7-emb300'
-    model_name = 'GoogleNews-vectors-negative300'
     wmd_dir = 'data/wmd/results/'
     is_base = True
     add_quotations = False
     
     # Initialising spaCy embeddings
-    spacy_embs, nlp = init_spacy(model_name, is_base=is_base)
+    # spacy_embs, nlp = init_spacy(model_name, is_base=is_base)
+    spacy_embs, nlp = init_spacy(embs_path, model_name)
+    print(f"Embedding for 'on': \n\n{spacy_embs['on']}")
     
     cpu_count = multiprocessing.cpu_count()
     print('Available CPUs:', cpu_count)
@@ -201,7 +256,7 @@ if __name__ == '__main__':
     print('Number of docs:', num_docs)
     
     nbow_docs = docs_to_nbow_wmd(nlp, docs, add_quotations=add_quotations)
-    
+
     elapsed_time = time.time() - t
     print('\n\tTotal loading and preprocessing time: \t %f\n' % (elapsed_time))
     
