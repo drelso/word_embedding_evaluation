@@ -1,0 +1,50 @@
+nohup: ignoring input
+[2021-07-10 03:50:15,658] [INFO] Reading vectors from /home/diegor/word_embedding_evaluation/data/embeds/word2vec_bnc_full_proc_data_voc_5.txt
+0it [00:00, ?it/s]0it [00:00, ?it/s]
+Traceback (most recent call last):
+  File "/usr/lib/python3.8/runpy.py", line 194, in _run_module_as_main
+    return _run_code(code, main_globals, None,
+  File "/usr/lib/python3.8/runpy.py", line 87, in _run_code
+    exec(code, run_globals)
+  File "/home/diegor/.local/lib/python3.8/site-packages/spacy/__main__.py", line 4, in <module>
+    setup_cli()
+  File "/home/diegor/.local/lib/python3.8/site-packages/spacy/cli/_util.py", line 69, in setup_cli
+    command(prog_name=COMMAND)
+  File "/home/diegor/.local/lib/python3.8/site-packages/click/core.py", line 829, in __call__
+    return self.main(*args, **kwargs)
+  File "/home/diegor/.local/lib/python3.8/site-packages/click/core.py", line 782, in main
+    rv = self.invoke(ctx)
+  File "/home/diegor/.local/lib/python3.8/site-packages/click/core.py", line 1259, in invoke
+    return _process_result(sub_ctx.command.invoke(sub_ctx))
+  File "/home/diegor/.local/lib/python3.8/site-packages/click/core.py", line 1259, in invoke
+    return _process_result(sub_ctx.command.invoke(sub_ctx))
+  File "/home/diegor/.local/lib/python3.8/site-packages/click/core.py", line 1066, in invoke
+    return ctx.invoke(self.callback, **ctx.params)
+  File "/home/diegor/.local/lib/python3.8/site-packages/click/core.py", line 610, in invoke
+    return callback(*args, **kwargs)
+  File "/home/diegor/.local/lib/python3.8/site-packages/typer/main.py", line 497, in wrapper
+    return callback(**use_params)  # type: ignore
+  File "/home/diegor/.local/lib/python3.8/site-packages/spacy/cli/init_pipeline.py", line 37, in init_vectors_cli
+    convert_vectors(nlp, vectors_loc, truncate=truncate, prune=prune, name=name)
+  File "/home/diegor/.local/lib/python3.8/site-packages/spacy/training/initialize.py", line 182, in convert_vectors
+    vectors_data, vector_keys = read_vectors(vectors_loc, truncate)
+  File "/home/diegor/.local/lib/python3.8/site-packages/spacy/training/initialize.py", line 211, in read_vectors
+    pieces = line.rsplit(" ", vectors_data.shape[1])
+IndexError: tuple index out of range
+Start time:  Sat Jul 10 03:50:13 2021
+Embeddings file found at /home/diegor/word_embedding_evaluation/data/embeds/word2vec_bnc_full_proc_data_voc_5.txt.
+Embeddings file found at /home/diegor/word_embedding_evaluation/data/embeds/hellingerPCA_200d_bnc_full_proc_data_voc_5.txt.
+Embeddings file found at /home/diegor/word_embedding_evaluation/data/embeds/glove_wiki-gigaword_300d_bnc_full_proc_data_voc_5.txt.
+Running command: 	 python3 -m spacy init vectors en /home/diegor/word_embedding_evaluation/data/embeds/word2vec_bnc_full_proc_data_voc_5.txt /tmp/Word2Vec_GoogleNews_BNC_s10_v5
+[38;5;4mâ¹ Creating blank nlp object for language 'en'[0m
+
+Traceback (most recent call last):
+  File "wmd-relax.py", line 245, in <module>
+    spacy_embs, nlp = init_spacy(embs_path, model_name)
+  File "wmd-relax.py", line 68, in init_spacy
+    nlp = spacy.load(embs_temp)#, create_pipeline=wmd.WMD.create_spacy_pipeline)
+  File "/home/diegor/.local/lib/python3.8/site-packages/spacy/__init__.py", line 47, in load
+    return util.load_model(name, disable=disable, exclude=exclude, config=config)
+  File "/home/diegor/.local/lib/python3.8/site-packages/spacy/util.py", line 329, in load_model
+    raise IOError(Errors.E050.format(name=name))
+OSError: [E050] Can't find model '/tmp/Word2Vec_GoogleNews_BNC_s10_v5'. It doesn't seem to be a Python package or a valid path to a data directory.

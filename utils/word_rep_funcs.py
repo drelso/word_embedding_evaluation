@@ -399,167 +399,253 @@ def partial_match(word, partial_strings):
 
 
 
-## Feature Vectors
-def feature_vectors(vocabulary, liwc_file, word_feats_save_file):
+## Word Features
+def word_features(vocabulary, liwc_file, word_feats_save_file):
+    if not os.path.exists(word_feats_save_file):
+        print(f'No word features file found at {word_feats_save_file}, creating a word features file.')
 
-    feature_dict = OrderedDict()
+        feature_dict = OrderedDict()
 
-    # for feat in liwc_feats_dict:
-    #     feature_dict[feat] = []
-
-    # for word, feats in word_liwc_features.items():
-    #     for feat in feats:
-    #         if feat in feature_dict:
-    #             feature_dict[feat].append(word)
-    #         else:
-    #             feature_dict[feat] = [word]
-    
-    # return True
-
-    # MAKE A "COORDINATE" DICTIONARY: FOR EVERY FEATURE 
-    # ADD THE INDEX OF THE WORD THAT APPLIES TO IT
-
-    tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
-    
-    # Get LIWC feature dictionary, word features, and partial words
-    liwc_feats_dict, word_liwc_features = get_liwc_vectors(liwc_file)
-
-    # print(liwc_feats_dict)
-    # print('\n\nword liwc features: \n\n')
-    # print(word_liwc_features)
-
-    partial_strings = {}
-
-    for word in word_liwc_features.keys():
-        if word.endswith('*'):
-            # Get first letter of word and add
-            # word to dictionary
-            initial = word[0]
-            if initial in partial_strings.keys():
-                partial_strings[initial].append(word[:-1])
-            else:
-                partial_strings[initial] = [word[:-1]]
-
-    # print('\n\npartial words: \n\n')
-    # print(partial_strings)
-    # exit()
-
-    num_subwords = 0
-    num_liwc_words = 0
-    num_frames = 0
-    num_wordnet = 0
-    
-    for i in range(len(vocabulary.itos)):
-        word = vocabulary.itos[i]
-        # toks = [tokenizer.ids_to_tokens[ix] for ix in tok_ids[1:-1]]
-        # subword_set.update(toks)
+        tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
         
-        # Add subwords to feature dictionary
-        tok_ids = tokenizer(word)['input_ids']
-        sub_prefix = 'sub_'
-        # Skip beginning [CLS] and end [SEP] tokens
-        for tok_id in tok_ids[1:-1]:
-            feat_name = sub_prefix + tokenizer.ids_to_tokens[tok_id]
-            if feat_name in feature_dict:
-                feature_dict[feat_name].append(i)
-            else:
-                feature_dict[feat_name] = [i]
-                num_subwords += 1
+        # Get LIWC feature dictionary, word features, and partial words
+        liwc_feats_dict, word_liwc_features = get_liwc_vectors(liwc_file)
+
+        partial_strings = {}
+
+        for word in word_liwc_features.keys():
+            if word.endswith('*'):
+                # Get first letter of word and add
+                # word to dictionary
+                initial = word[0]
+                if initial in partial_strings.keys():
+                    partial_strings[initial].append(word[:-1])
+                else:
+                    partial_strings[initial] = [word[:-1]]
+
+        num_subwords = 0
+        num_liwc_words = 0
+        num_frames = 0
+        num_wordnet = 0
         
-        # Add word LIWC features to feature dictionary
-        liwc_prefix = 'liwc_'
-        # Start by matching partial strings, e.g. updat*
-        if word[0] in partial_strings.keys():
-            for part in partial_strings[word[0]]:
-                if word.startswith(part):
-                    num_liwc_words += 1
-                    feat = liwc_prefix + part + '*'
+        for i in range(len(vocabulary.itos)):
+            word = vocabulary.itos[i]
+            # toks = [tokenizer.ids_to_tokens[ix] for ix in tok_ids[1:-1]]
+            # subword_set.update(toks)
+
+            # Add subwords to feature dictionary
+            tok_ids = tokenizer(word)['input_ids']
+            sub_prefix = 'sub_'
+            # Skip beginning [CLS] and end [SEP] tokens
+            for tok_id in tok_ids[1:-1]:
+                feat_name = sub_prefix + tokenizer.ids_to_tokens[tok_id]
+                if feat_name in feature_dict:
+                    feature_dict[feat_name].append(i)
+                else:
+                    feature_dict[feat_name] = [i]
+                    num_subwords += 1
+            
+            # Add word LIWC features to feature dictionary
+            liwc_prefix = 'liwc_'
+            # Start by matching partial strings, e.g. updat*
+            if word[0] in partial_strings.keys():
+                for part in partial_strings[word[0]]:
+                    if word.startswith(part):
+                        num_liwc_words += 1
+                        feat = liwc_prefix + part + '*'
+                        if feat in feature_dict:
+                            feature_dict[feat].append(i)
+                        else:
+                            feature_dict[feat] = [i]
+
+            if word in word_liwc_features.keys():
+                liwc_feats = word_liwc_features[word]
+                num_liwc_words += 1
+                for feat in liwc_feats:
+                    feat = liwc_prefix + feat
                     if feat in feature_dict:
                         feature_dict[feat].append(i)
                     else:
                         feature_dict[feat] = [i]
 
-        if word in word_liwc_features.keys():
-            liwc_feats = word_liwc_features[word]
-            num_liwc_words += 1
-            for feat in liwc_feats:
-                feat = liwc_prefix + feat
+            # Add frames to feature dictionary
+            # (currently only frame names)
+            frames = fn.frames_by_lemma(r'(?i)'+ re.escape(word))
+            frame_prefix = 'frame_'
+            for frame in frames:
+                feat = frame_prefix + frame.name
                 if feat in feature_dict:
                     feature_dict[feat].append(i)
                 else:
                     feature_dict[feat] = [i]
+                    num_frames += 1
 
-        # Add frames to feature dictionary
-        # (currently only frame names)
-        frames = fn.frames_by_lemma(r'(?i)'+ re.escape(word))
-        frame_prefix = 'frame_'
-        for frame in frames:
-            feat = frame_prefix + frame.name
-            if feat in feature_dict:
-                feature_dict[feat].append(i)
-            else:
-                feature_dict[feat] = [i]
-                num_frames += 1
+            # Add synset knowledge to feature dictionary
+            # (currently lexical names and POS tags)
+            synsets = wn.synsets(word)
+            synspos_prefix = 'syns-pos_'
+            pos_set = set()
+            synslex_prefix = 'syns-lex_'
+            lex_set = set()
+            synshyper_prefix = 'syns-hyper_'
+            hyperset = set()
 
-        # Add synset knowledge to feature dictionary
-        # (currently lexical names and POS tags)
-        synsets = wn.synsets(word)
-        synspos_prefix = 'syns-pos_'
-        pos_set = set()
-        synslex_prefix = 'syns-lex_'
-        lex_set = set()
-        synshyper_prefix = 'syns-hyper_'
-        hyperset = set()
+            for s in synsets:
+                synset_els = s.lexname().split('.')
+                if len(synset_els) != 2:
+                    print(f"Parsing error with synsets for {word}: {synset_els}")
+                
+                pos_set.add(synset_els[0])
+                lex_set.add(synset_els[1])
+                hyperset = set([h.name().split('.')[0] for h in synsets[0].hypernyms()])
 
-        for s in synsets:
-            synset_els = s.lexname().split('.')
-            if len(synset_els) != 2:
-                print(f"Parsing error with synsets for {word}: {synset_els}")
+            for pos in pos_set:
+                feat = synspos_prefix + pos
+                if feat in feature_dict:
+                    feature_dict[feat].append(i)
+                else:
+                    feature_dict[feat] = [i]
+                    num_wordnet += 1
             
-            pos_set.add(synset_els[0])
-            lex_set.add(synset_els[1])
-            hyperset = set([h.name().split('.')[0] for h in synsets[0].hypernyms()])
-
-        for pos in pos_set:
-            feat = synspos_prefix + pos
-            if feat in feature_dict:
-                feature_dict[feat].append(i)
-            else:
-                feature_dict[feat] = [i]
-                num_wordnet += 1
-        
-        for lex in lex_set:
-            feat = synslex_prefix + lex
-            if feat in feature_dict:
-                feature_dict[feat].append(i)
-            else:
-                feature_dict[feat] = [i]
-                num_wordnet += 1
+            for lex in lex_set:
+                feat = synslex_prefix + lex
+                if feat in feature_dict:
+                    feature_dict[feat].append(i)
+                else:
+                    feature_dict[feat] = [i]
+                    num_wordnet += 1
+                
+            for hyper in hyperset:
+                feat = synshyper_prefix + hyper
+                if feat in feature_dict:
+                    feature_dict[feat].append(i)
+                else:
+                    feature_dict[feat] = [i]
+                    num_wordnet += 1
             
-        for hyper in hyperset:
-            feat = synshyper_prefix + hyper
-            if feat in feature_dict:
-                feature_dict[feat].append(i)
-            else:
-                feature_dict[feat] = [i]
-                num_wordnet += 1
+            # TODO: OXFORD DICTIONARY API?
+
+            # TODO: CHECK SEMCOR
         
-        # TODO: WORDNET QUERIES:
-        #       - POS TAGS
-        #       - SUPERSENSES
+        # print(feature_dict)
 
-        # TODO: OXFORD DICTIONARY API?
+        print(f"Constructed word feature dictionary with: \n\t{num_subwords} subwords \n\t{num_liwc_words} LIWC words \n\t{num_frames} frames \n\t{num_wordnet} WordNet features")
 
-        # TODO: CHECK SEMCOR
+        print(f"Saving word feature dictionary ({len(feature_dict)} features) to {word_feats_save_file}")
+        np.save(word_feats_save_file, feature_dict)
+    else:
+        print(f'Word features file found at {word_feats_save_file}.')
+
+
+def trim_word_features(word_features_path, threshold):
+    word_features = np.load(word_features_path, allow_pickle=True)
+    trimmed_features = {}
+    sub_prefix = 'sub_'
+    liwc_prefix = 'liwc_'
+    frame_prefix = 'frame_'
+    synspos_prefix = 'syns-pos_'
+    synslex_prefix = 'syns-lex_'
+    synshyper_prefix = 'syns-hyper_'
+
+    num_subwords = 0
+    num_liwc_words = 0
+    num_frames = 0
+    num_pos = 0
+    num_syns = 0
+    num_hyper = 0
+
+    for feature, word_ixs in word_features.item().items():
+        if len(word_ixs) >= threshold:
+            if feature.startswith(sub_prefix): num_subwords += 1
+            if feature.startswith(liwc_prefix): num_liwc_words += 1
+            if feature.startswith(frame_prefix): num_frames += 1
+            if feature.startswith(synspos_prefix): num_pos += 1
+            if feature.startswith(synslex_prefix): num_syns += 1
+            if feature.startswith(synshyper_prefix): num_hyper += 1
+
+            trimmed_features[feature] = word_ixs
     
-    # print(feature_dict)
+    print(f"Trimmed {len(word_features.item())} features down to {len(trimmed_features)} with a feature frequency threshold of {threshold}")
+    print(f"\n\t{num_subwords} subwords \n\t{num_liwc_words} LIWC features \n\t{num_frames} FrameNet frames \n\t{num_pos} WordNet POS tags \n\t{num_syns} senses \n\t{num_hyper} hypernyms")
+    return trimmed_features
 
-    print(f"Constructed feature dictionary with: \n\t{num_subwords} subwords \n\t{num_liwc_words} LIWC words \n\t{num_frames} frames \n\t{num_wordnet} WordNet features")
 
-    print(f"Saving feature dictionary ({len(feature_dict)} features) to {word_feats_save_file}")
-    np.save(word_feats_save_file, feature_dict)
+def feature_vectors(vocabulary, feature_dict, save_file, spacy_feats_save_file=None, sort_feats=True):
+    if not os.path.exists(save_file):
+        print(f'No word feature vectors file found at {save_file} creating a word feature vectors file.')
+        vocab_size = len(vocabulary)
+        num_feats = len(feature_dict)
 
-    
+        print(f"Processing {num_feats} features for {vocab_size} words")
+        
+        if sort_feats:
+            feature_list = sorted(list(feature_dict.keys()))
+        else:
+            feature_list = list(feature_dict.keys())
+
+        feature_ixs = {feature: ix for ix, feature in enumerate(feature_list)}
+
+        # Initialise a dictionary of word features where words are the keys
+        # and the values are lists of features initialised to 0 
+        word_feats = {word: [0] * num_feats  for word in vocabulary.stoi.keys()}
+
+        word_feats['feature_indices'] = feature_ixs
+        print(f"Stored feature indices dictionary to key 'feature_indices'")
+
+        for feature, word_ixs in feature_dict.items():
+            feature_ix = feature_ixs[feature]
+
+            for word_ix in word_ixs:
+                # Use the word index to get the word from the vocabulary,
+                # then access the entry for the features for that word, and
+                # change the value at the index of the current feature to 1
+                word_feats[vocabulary.itos[word_ix]][feature_ix] = 1
+        
+        print(f"Saving word feature vector dictionary to {save_file}")
+        np.save(save_file, word_feats)
+
+        if spacy_feats_save_file:
+            print(f"Processing word feature vectors in spaCy format ")
+            
+            with open(spacy_feats_save_file, 'w+') as spacy_emb_file:
+                print(f"Writing word feature vectors to file at {spacy_feats_save_file}")
+
+                # From https://spacy.io/api/cli#init-vectors
+                # Location of vectors. Should be a file where the first
+                # row contains the dimensions of the vectors, followed
+                # by a space-separated Word2Vec table
+                spacy_emb_file.write(str(vocab_size) + ' ' + str(num_feats) + '\n')
+
+                for word, vec in word_feats.items():
+                    if word != 'feature_indices': # Ignore feature_indices entry
+                        row = word + ' ' + ' '.join([str(i) for i in vec])
+                        spacy_emb_file.write(row + '\n')
+            
+            print(f"Finished writing word feature vectors (spaCy format) to file")
+            
+            # Construct file path to feature list by appending a suffix
+            # to the spaCy save file (just before the last '.', which is taken
+            # as the file suffix)
+            feature_list_path = '.'.join(spacy_feats_save_file.split('.')[:-1]) + '_featlist.txt'
+            print(f"Saving feature list to {feature_list_path}")
+            with open(feature_list_path, 'w+') as feat_list_file:
+                feat_list_file.write('\n'.join(feature_list))
+    else:
+        print(f'Word feature vectors file found at {save_file}.')
+
+
+def get_features_for_word(word, feat_file):
+    feat_vects = np.load(feat_file, allow_pickle=True)
+    ixs_feats = {ix: feat for feat, ix in feat_vects.item()['feature_indices'].items()}
+
+    if word in feat_vects.item().keys():
+        print(f"Features for word '{word}':")
+
+        for ix, value in enumerate(feat_vects.item()[word]):
+            if value: # If feature value is non-zero
+                print(f"\t- {ixs_feats[ix]}")
+
+
 def get_word_knowledge(word, verbose=False):
     """
     Query the FrameNet and WordNet

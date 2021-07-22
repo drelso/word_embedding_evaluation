@@ -68,7 +68,12 @@ parameters['glove_embeds_spacy'] = embeds_dir + 'glove_wiki-gigaword_300d_' + bn
 linguistic_feats_dir = parameters['data_dir'] + 'linguistic_feats/'
 parameters['liwc_features'] = linguistic_feats_dir + 'pennebaker.dic'
 parameters['semcor_features_dir'] = linguistic_feats_dir + 'SEMCATdataset2018/Categories/'
-parameters['word_features'] = word_embeddings_dir + 'morph_liwc_wordnet_word_features.npy'
+word_features_name = 'morph_liwc_wordnet_word_features_' + bnc_subset_data_name + '_voc_' + str(parameters['vocab_threshold'])
+parameters['word_features'] = linguistic_feats_dir + word_features_name + '.npy'
+parameters['feature_threshold'] = 5
+trimmed_word_features_name = word_features_name + '_featmin_' + str(parameters['feature_threshold'])
+parameters['word_feature_vectors'] = linguistic_feats_dir + trimmed_word_features_name + '_vecs.npy'
+parameters['word_feature_vectors_spacy'] = linguistic_feats_dir + trimmed_word_features_name + '_vecs.txt'
 
 
 # Correlation Data
@@ -76,8 +81,21 @@ correlation_dir = parameters['data_dir'] + 'correl_data/'
 parameters['simlex_file'] = correlation_dir + 'SimLex-999.txt'
 parameters['wordsim353_sim_file'] = correlation_dir + 'wordsim_similarity_goldstandard.txt'
 parameters['wordsim353_rel_file'] = correlation_dir + 'wordsim_relatedness_goldstandard.txt'
+parameters['simverb3500_rel_file'] = correlation_dir + 'SimVerb-3500.txt'
 
 correlation_results_dir = correlation_dir + 'results/'
 parameters['simlex_results_file'] = correlation_results_dir + 'simlex_results.npy'
 parameters['wordsim353_sim_results_file'] = correlation_results_dir + 'wordsim353_sim_results.npy'
 parameters['wordsim353_rel_results_file'] = correlation_results_dir + 'wordsim353_rel_results.npy'
+parameters['simverb3500_rel_results_file'] = correlation_results_dir + 'simverb3500_rel_results.npy'
+
+
+# Word pairs
+word_pairs_dir = parameters['data_dir'] + 'word_pairs/'
+parameters['train_skipgram_data'] = word_pairs_dir + 'skipgram_bnc_full_proc_data_shffl_sub-1_train.npy'
+
+parameters['num_word_pairs'] = 3000
+parameters['word_pair_file'] = word_pairs_dir + str(parameters['num_word_pairs']) + 'rand_ctx_syn_word_pairs.npy'
+parameters['word_pair_dists_file'] = word_pairs_dir + str(parameters['num_word_pairs']) + 'rand_ctx_syn_word_pair_dists.npy'
+
+parameters['word_pair_dists_plot'] = word_pairs_dir + str(parameters['num_word_pairs']) + 'rand_ctx_syn_word_pair_dists'

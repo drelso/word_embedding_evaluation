@@ -223,11 +223,17 @@ if __name__ == '__main__':
     convert_to_spacy_embeds(parameters['hellingerPCA_embeds'], parameters['hellingerPCA_embeds_spacy'])
     convert_to_spacy_embeds(parameters['glove_embeds'], parameters['glove_embeds_spacy'])
 
-    # model_name = 'Word2Vec_GoogleNews_BNC_s10_v5'
-    # embs_path = parameters['word2vec_embeds_spacy']
+    model_name = 'Word2Vec_GoogleNews_BNC_s10_v5'
+    embs_path = parameters['word2vec_embeds_spacy']
     
-    model_name = 'HellingerPCA_BNC_s10_v5'
-    embs_path = parameters['hellingerPCA_embeds_spacy']
+    # model_name = 'HellingerPCA_BNC_s10_v5'
+    # embs_path = parameters['hellingerPCA_embeds_spacy']
+    
+    # model_name = 'GloVe_BNC_s10_v5'
+    # embs_path = parameters['glove_embeds_spacy']
+    
+    # model_name = 'FeatVecs_BNC_s10_v5'
+    # embs_path = parameters['word_feature_vectors_spacy']
     
     # To run with profiler sorted by tottime
     # (tottime is the total runtime for a

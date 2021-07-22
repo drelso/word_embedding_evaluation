@@ -35,9 +35,8 @@ import scipy
 from config import parameters
 
 from utils.funcs import print_parameters
-from utils.word_rep_funcs import build_vocabulary, word2vec_with_vocab, hellingerPCA_with_vocab, glove_with_vocab, feature_vectors
-
-
+from utils.word_rep_funcs import build_vocabulary, word2vec_with_vocab, hellingerPCA_with_vocab, glove_with_vocab, word_features, trim_word_features, feature_vectors, get_features_for_word
+from utils.word_rep_eval import get_word_pairs, word_pair_distances, plot_word_pair_dists
 
 
 def read_correl_data(correl_data_path, correl_name='SimLex'):
@@ -50,11 +49,14 @@ def read_correl_data(correl_data_path, correl_name='SimLex'):
             # SimLex dataset has a header
             header = next(data)
             score_index = header.index('SimLex999')
+        elif correl_name == 'SimVerb-3500':
+            # SimVerb-3500 dataset scores
+            # appear in the fourth column
+            score_index = 3
         else:
             # WordSim353 datasets scores
             # appear in the third column
             score_index = 2
-        
         valid_pairs = 0
         total_pairs = 0
         # results = [col_names]
@@ -121,39 +123,41 @@ def correl_dists_for_embeds(embed_dict, correl_data_path, correl_save_file, corr
     
 
 def calculate_correl_results(correl_dists_file, correl_results_save_file=None):
-    correl_dists = np.load(correl_dists_file, allow_pickle=True)
-    embed_names = [key for key in correl_dists.item().keys() if key not in ['w1', 'w2', 'score']]
-    
-    correl_results = {}
+    if correl_results_save_file and not os.path.exists(correl_results_save_file):
+        print(f'No correlation results file found at {correl_results_save_file}, calculating results.')
+        print(f"Calculating correlation results for distances in {correl_dists_file}")
+        correl_dists = np.load(correl_dists_file, allow_pickle=True)
+        embed_names = [key for key in correl_dists.item().keys() if key not in ['w1', 'w2', 'score']]
+        
+        correl_results = {}
 
-    for embed_name in embed_names:
-        print(f"Calculating correlation results for {embed_name} embeddings", flush=True)
+        for embed_name in embed_names:
+            print(f"Calculating correlation results for {embed_name} embeddings", flush=True)
 
-        scores = []
-        dists = []
-        num_missing = 0
-        for i, dist in enumerate(correl_dists.item()[embed_name]):
-            if not np.isnan(dist):
-                scores.append(correl_dists.item()['score'][i])
-                dists.append(correl_dists.item()[embed_name][i])
-            else:
-                num_missing += 1
+            scores = []
+            dists = []
+            num_missing = 0
+            for i, dist in enumerate(correl_dists.item()[embed_name]):
+                if not np.isnan(dist):
+                    scores.append(correl_dists.item()['score'][i])
+                    dists.append(correl_dists.item()[embed_name][i])
+                else:
+                    num_missing += 1
 
-        print(f"\tSkipping {num_missing} words not in vocabulary")
+            print(f"\tSkipping {num_missing} words not in vocabulary")
 
-        spearman = scipy.stats.spearmanr(scores, dists)
-        pearson = scipy.stats.pearsonr(scores, dists)
-        correl_results[embed_name] = {'spearman': spearman, 'pearson': pearson}
-    
-    print(f"Correlation results: \n\n{correl_results}")
+            spearman = scipy.stats.spearmanr(scores, dists)
+            pearson = scipy.stats.pearsonr(scores, dists)
+            correl_results[embed_name] = {'spearman': spearman, 'pearson': pearson}
+        
+        print(f"Correlation results: \n\n{correl_results}")
 
-    if correl_results_save_file:
-        print(f"Saving correlation results to {correl_results_save_file}")
-        np.save(correl_results_save_file, correl_results)
-
-    # print(f"Correlation results: {correl_results}")
-    # return correl_results
-
+        if correl_results_save_file:
+            print(f"Saving correlation results to {correl_results_save_file}")
+            np.save(correl_results_save_file, correl_results)
+    else:
+        print(f'Correlation results file found at {correl_results_save_file}.')
+        
 
 
 
@@ -170,9 +174,62 @@ if __name__ == "__main__":
         parameters['source_hellingerPCA_vecs'],
         parameters['hellingerPCA_embeds'])
     
-    glove_with_vocab(vocabulary, parameters['glove_embeds'])
+    glove_with_vocab(
+        vocabulary,
+        parameters['glove_embeds'])
 
-    feature_vectors(vocabulary, parameters['liwc_features'], parameters['word_features'])
+    word_features(
+        vocabulary,
+        parameters['liwc_features'],
+        parameters['word_features'])
+    
+    trimmed_feat_dict = trim_word_features(
+                            parameters['word_features'],
+                            parameters['feature_threshold'])
+
+    feature_vectors(
+        vocabulary,
+        trimmed_feat_dict,
+        parameters['word_feature_vectors'],
+        spacy_feats_save_file=parameters['word_feature_vectors_spacy'],
+        sort_feats=True)
+
+    # Word pairs
+    get_word_pairs(
+        parameters['num_word_pairs'],
+        vocabulary,
+        parameters['train_skipgram_data'],
+        parameters['word_pair_file'])
+
+    embed_files_dict = {
+        'Word2Vec' : parameters['word2vec_embeds'],
+        'HellingerPCA' : parameters['hellingerPCA_embeds'],
+        'GloVe' : parameters['glove_embeds'],
+        'Feature_Vectors' : parameters['word_feature_vectors']
+    }
+
+    word_pair_distances(
+        parameters['word_pair_file'],
+        embed_files_dict,
+        parameters['word_pair_dists_file'])
+
+    plot_word_pair_dists(
+        parameters['word_pair_dists_file'],
+        parameters['word_pair_dists_plot'] + '_cos',
+        fig_title='Word Pair Cosine Distance Distributions',
+        dist_type='cos')
+    
+    plot_word_pair_dists(
+        parameters['word_pair_dists_file'],
+        parameters['word_pair_dists_plot'] + '_euc',
+        fig_title='Word Pair Euclidean Distance Distributions',
+        dist_type='euc')
+
+    # Sample word features
+    # Takes a while due to the loading of feature dictionary
+    # word = 'organic'
+    # get_features_for_word(word, parameters['word_feature_vectors'])
+
     # word_liwc_feats = get_liwc_vectors(parameters['liwc_features'], parameters['word_features'])
 
     # simlex_data = read_correl_data(parameters['simlex_file'], correl_name='SimLex')
@@ -187,34 +244,57 @@ if __name__ == "__main__":
     #     'WordSim353-rel':   parameters['wordsim353_rel_results_file'],
     # }
 
-    '''
+    
     ## Similarity-Distance Correlation
     embeds_dict = {
         'word2vec':         parameters['word2vec_embeds'],
-        'glove':            parameters['glove_embeds'],
-        'hellingerPCA':     parameters['hellingerPCA_embeds']
+        'GloVe':            parameters['glove_embeds'],
+        'hellingerPCA':     parameters['hellingerPCA_embeds'],
+        'Feature_Vecs':     parameters['word_feature_vectors']
     }
 
     correl_dists_for_embeds(
         embeds_dict,
         parameters['simlex_file'],
-        parameters['simlex_results_file'],
-        'SimLex')
+        parameters['simlex_dists_file'],
+        'SimLex-999')
+    
+    calculate_correl_results(
+        parameters['simlex_dists_file'],
+        correl_results_save_file = parameters['simlex_results_file'])
 
     correl_dists_for_embeds(
         embeds_dict,
         parameters['wordsim353_sim_file'],
-        parameters['wordsim353_sim_results_file'],
+        parameters['wordsim353_sim_dists_file'],
         'WordSim353-sim')
 
+    calculate_correl_results(
+        parameters['wordsim353_sim_dists_file'],
+        correl_results_save_file = parameters['wordsim353_sim_results_file'])
+    
     correl_dists_for_embeds(
         embeds_dict,
         parameters['wordsim353_rel_file'],
-        parameters['wordsim353_rel_results_file'],
+        parameters['wordsim353_rel_dists_file'],
         'WordSim353-rel')
 
-    calculate_correl_results(parameters['simlex_results_file'])
-    calculate_correl_results(parameters['wordsim353_sim_results_file'])
-    calculate_correl_results(parameters['wordsim353_rel_results_file'])
-    '''
+    calculate_correl_results(
+        parameters['wordsim353_rel_dists_file'],
+        correl_results_save_file = parameters['wordsim353_rel_results_file'])
+    
+    correl_dists_for_embeds(
+        embeds_dict,
+        parameters['simverb3500_rel_file'],
+        parameters['simverb3500_rel_dists_file'],
+        'SimVerb-3500')
+    
+    calculate_correl_results(
+        parameters['simverb3500_dists_file'],
+        correl_results_save_file = parameters['simverb3500_results_file'])
+
+    
+    # calculate_correl_results(parameters['wordsim353_sim_dists_file'])
+    # calculate_correl_results(parameters['wordsim353_rel_dists_file'])
+    # calculate_correl_results(parameters['simverb3500_rel_dists_file'])
     
