@@ -81,13 +81,19 @@ correlation_dir = parameters['data_dir'] + 'correl_data/'
 parameters['simlex_file'] = correlation_dir + 'SimLex-999.txt'
 parameters['wordsim353_sim_file'] = correlation_dir + 'wordsim_similarity_goldstandard.txt'
 parameters['wordsim353_rel_file'] = correlation_dir + 'wordsim_relatedness_goldstandard.txt'
-parameters['simverb3500_rel_file'] = correlation_dir + 'SimVerb-3500.txt'
+parameters['simverb3500_file'] = correlation_dir + 'SimVerb-3500.txt'
 
 correlation_results_dir = correlation_dir + 'results/'
+
+parameters['simlex_dists_file'] = correlation_results_dir + 'simlex_dists.npy'
+parameters['wordsim353_sim_dists_file'] = correlation_results_dir + 'wordsim353_sim_dists.npy'
+parameters['wordsim353_rel_dists_file'] = correlation_results_dir + 'wordsim353_rel_dists.npy'
+parameters['simverb3500_dists_file'] = correlation_results_dir + 'simverb3500_dists.npy'
+
 parameters['simlex_results_file'] = correlation_results_dir + 'simlex_results.npy'
 parameters['wordsim353_sim_results_file'] = correlation_results_dir + 'wordsim353_sim_results.npy'
 parameters['wordsim353_rel_results_file'] = correlation_results_dir + 'wordsim353_rel_results.npy'
-parameters['simverb3500_rel_results_file'] = correlation_results_dir + 'simverb3500_rel_results.npy'
+parameters['simverb3500_results_file'] = correlation_results_dir + 'simverb3500_results.npy'
 
 
 # Word pairs

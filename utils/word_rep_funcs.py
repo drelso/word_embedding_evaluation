@@ -155,7 +155,7 @@ def hellingerPCA_with_vocab(vocabulary, source_vocab, source_vecs, save_file, em
     Parameters
     ----------
     vocabulary : torchtext.vocab
-        vocabulary object to convert to Word2Vec
+        vocabulary object to convert to HellingerPCA
         embeddings
     save_file : str
         path to save the embeddings to

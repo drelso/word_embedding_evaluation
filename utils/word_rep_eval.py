@@ -323,3 +323,21 @@ def synonym_selection(synonym_set, vocabulary, syn_selection='s1'):
         return np.random.choice(potential_syns, p=syn_freqs, size=num_syns, replace=False)
     else:
         raise ValueError(f'Unrecognised syn_selection {syn_selection}')
+
+
+import csv
+
+def voc_and_array_to_embs_dict(vocab_file, npy_embs_file, save_file):
+    npy_embs = np.load(npy_embs_file)
+    voc = []
+    with open(vocab_file,'r') as v:
+        voc_reader = csv.reader(v)
+        # Every row in this vocabulary is a tuple of the form:
+        #   ['index', 'word']
+        voc = [v for v in voc_reader]
+    
+    embs_dict = {}
+    for i, v in voc:
+        embs_dict[voc] = npy_embs[int(i)]
+    
+    np.save(save_file, embs_dict)

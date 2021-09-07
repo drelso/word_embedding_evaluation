@@ -285,8 +285,8 @@ if __name__ == "__main__":
     
     correl_dists_for_embeds(
         embeds_dict,
-        parameters['simverb3500_rel_file'],
-        parameters['simverb3500_rel_dists_file'],
+        parameters['simverb3500_file'],
+        parameters['simverb3500_dists_file'],
         'SimVerb-3500')
     
     calculate_correl_results(

@@ -55,9 +55,9 @@ if __name__ == '__main__':
     calculate_results(csv_file)
 
     
-    # csv_file = 'data/wmd/results/Word2Vec_BNC_s10_v5_wmd-knn11-results.csv'
-    # print('\nCalculating file: ', csv_file)
-    # calculate_results(csv_file)
+    csv_file = 'data/wmd/results/Word2Vec_GoogleNews_BNC_s10_v5_wmd-knn11-results.csv'
+    print('\nCalculating file: ', csv_file)
+    calculate_results(csv_file)
 
     
     csv_file = 'data/wmd/results/HellingerPCA_BNC_s10_v5_wmd-knn11-results.csv'
@@ -68,6 +68,15 @@ if __name__ == '__main__':
     csv_file = 'data/wmd/results/GloVe_BNC_s10_v5_wmd-knn11-results.csv'
     print('\nCalculating file: ', csv_file)
     calculate_results(csv_file)
+
+    csv_file = 'data/wmd/results/FeatVecs_BNC_s10_v5_wmd-knn11-1000docs-results.csv'
+    print('\nCalculating file: ', csv_file)
+    calculate_results(csv_file)
+
+    csv_file = 'data/wmd/results/FeatVecs_BNC_s10_v5_wmd-knn11-2500docs-results.csv'
+    print('\nCalculating file: ', csv_file)
+    calculate_results(csv_file)
+    
 
     # csv_file = 'data/wmd/results/word2vec-google-news-300_voc20_wmd-knn11-results.csv'
     # print('\nCalculating file: ', csv_file)

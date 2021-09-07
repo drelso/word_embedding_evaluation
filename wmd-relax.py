@@ -223,8 +223,8 @@ if __name__ == '__main__':
     convert_to_spacy_embeds(parameters['hellingerPCA_embeds'], parameters['hellingerPCA_embeds_spacy'])
     convert_to_spacy_embeds(parameters['glove_embeds'], parameters['glove_embeds_spacy'])
 
-    model_name = 'Word2Vec_GoogleNews_BNC_s10_v5'
-    embs_path = parameters['word2vec_embeds_spacy']
+    # model_name = 'Word2Vec_GoogleNews_BNC_s10_v5'
+    # embs_path = parameters['word2vec_embeds_spacy']
     
     # model_name = 'HellingerPCA_BNC_s10_v5'
     # embs_path = parameters['hellingerPCA_embeds_spacy']
@@ -232,9 +232,11 @@ if __name__ == '__main__':
     # model_name = 'GloVe_BNC_s10_v5'
     # embs_path = parameters['glove_embeds_spacy']
     
-    # model_name = 'FeatVecs_BNC_s10_v5'
-    # embs_path = parameters['word_feature_vectors_spacy']
+    model_name = 'FeatVecs_BNC_s10_v5'
+    embs_path = parameters['word_feature_vectors_spacy']
     
+    print(f"Running WMD KNN classifier with {model_name} embeddings")
+
     # To run with profiler sorted by tottime
     # (tottime is the total runtime for a
     # single process)
@@ -254,10 +256,11 @@ if __name__ == '__main__':
     cpu_count = multiprocessing.cpu_count()
     print('Available CPUs:', cpu_count)
     
-    newsgroups = fetch_20newsgroups()#subset='test')
+    newsgroups = fetch_20newsgroups(subset='test')
     docs, y, class_names = newsgroups.data, newsgroups.target, newsgroups.target_names
 
-    # docs = docs[:100]
+    print('Running on test 20 NewsGroups data')
+    docs = docs[:2500]
     num_docs = len(docs)
     print('Number of docs:', num_docs)
     
